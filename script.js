@@ -533,29 +533,41 @@ function showResult() {
     scoreListEl.appendChild(li);
   });
 
-  // Chart.js 图表（重复进入结果页先销毁）
-  const canvas = document.getElementById("resultChart");
-  if (canvas && window.Chart) {
-    const ctx = canvas.getContext("2d");
-    if (resultChart) resultChart.destroy();
+// Chart.js 图表（重复进入结果页先销毁）
+const canvas = document.getElementById("resultChart");
+if (canvas && window.Chart) {
+  const ctx = canvas.getContext("2d");
+  if (resultChart) resultChart.destroy();
 
-    resultChart = new Chart(ctx, {
-      type: "bar",
-      data: {
-        labels: ["D", "I", "S", "C"],
-        datasets: [{
-          label: '你的 DISC 类型数量',
-          data: [scores.D, scores.I, scores.S, scores.C],
-          borderWidth: 1
-        }]
-      },
-      options: {
-        scales: {
-          y: { beginAtZero: true }
-        }
+  resultChart = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: ["D", "I", "S", "C"],
+      datasets: [{
+        label: '你的 DISC 类型数量',
+        data: [scores.D, scores.I, scores.S, scores.C],
+        backgroundColor: [
+          "#ff4d4d",
+          "#4d94ff",
+          "#66b266",
+          "#ffcc00"
+        ],
+        borderColor: [
+          "#ff0000",
+          "#0051ff",
+          "#1e7a1e",
+          "#ff9900"
+        ],
+        borderWidth: 1
+      }]
+    },
+    options: {
+      scales: {
+        y: { beginAtZero: true }
       }
-    });
-  }
+    }
+  });
+}
 }
 
 // ====== 上一题 / 下一题（加保护，避免元素为空报错） ======
@@ -652,3 +664,4 @@ window.uploadToCloud = async function () {
     btn.disabled = false;
   }
 };
+
