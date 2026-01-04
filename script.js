@@ -15,7 +15,8 @@ let userInfo = {
   department: "",
   position: ""
 };
-
+let latestScores = null;        // 记录 D / I / S / C 数量
+let latestMainSecond = null;   // 记录 主型 / 次型
 // ====== 题目数据（40题） ======
 const questions = [
   {
@@ -499,10 +500,12 @@ function showResult() {
 
   const scores = { D: 0, I: 0, S: 0, C: 0 };
   answers.forEach((t) => (scores[t] += 1));
+  latestScores = scores;
 
   const entries = Object.entries(scores).sort((a, b) => b[1] - a[1]);
   const [mainType, mainScore] = entries[0];
   const [secondType, secondScore] = entries[1];
+  latestMainSecond = { mainType, secondType };
 
   questionBox.style.display = "none";
   resultBox.style.display = "block";
@@ -618,13 +621,24 @@ window.uploadToCloud = async function () {
   const { data, error } = await supabase
     .from('scores')
     .insert([
-      {
-        player_name: userInfo.name,
-        department: userInfo.department,
-        position: userInfo.position,
-        disc_result: resultText,
-        score: 0
-      }
+     {
+  player_name: userInfo.name,
+  department: userInfo.department,
+  position: userInfo.position,
+  disc_result: resultText,
+
+  // 四个 DISC 数量
+  d_count: latestScores?.D ?? 0,
+  i_count: latestScores?.I ?? 0,
+  s_count: latestScores?.S ?? 0,
+  c_count: latestScores?.C ?? 0,
+
+  // 主型 / 次型
+  main_type: latestMainSecond?.mainType ?? null,
+  second_type: latestMainSecond?.secondType ?? null,
+
+  score: 0
+}
     ]);
 
   if (error) {
@@ -639,4 +653,3 @@ window.uploadToCloud = async function () {
     btn.style.backgroundColor = '#ccc';
   }
 };
-
