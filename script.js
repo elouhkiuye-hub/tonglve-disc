@@ -1,3 +1,8 @@
+// ====== 1. 初始化 Supabase (添加在文件最顶端) ======
+const supabaseUrl = 'https://afuewegupycldgqwmyiv.supabase.co';
+const supabaseKey = 'sb_publishable_vca15z0QMvN6nkQTFd90wQ_FuCFHKWQ';
+// 注意：这里要用 window.supabase，因为我们是从 HTML 的 CDN 引入的
+const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 let userInfo = {
   name: "",
   department: "",
@@ -581,3 +586,45 @@ restartBtn.addEventListener("click", () => {
 
 // 初次渲染
 renderQuestion();
+// ====== 2. 定义上传到云端的函数 (添加在文件最底端) ======
+// 我们把它挂载到 window 对象上，这样 HTML 里的按钮才能找到它
+window.uploadToCloud = async function() {
+    const btn = document.getElementById('uploadBtn');
+    
+    // 防止还没测完就点
+    if (!userInfo.name) {
+        alert("请先完成测评！");
+        return;
+    }
+
+    // 按钮变色，防止重复点击
+    btn.innerText = '正在上传...';
+    btn.disabled = true;
+
+    // 获取页面上显示的最终结果文字
+    const resultText = document.getElementById('mainType').innerText;
+
+    // 发送到 Supabase
+    const { data, error } = await supabase
+        .from('scores')
+        .insert([
+            { 
+                player_name: userInfo.name,     // 直接使用 script.js 里的变量
+                department: userInfo.department,
+                position: userInfo.position,
+                disc_result: resultText,        // 存入比如 "D (支配型)..."
+                score: 0                        // 暂时填0，如果你想存具体分数，我可以教你改
+            }
+        ]);
+
+    if (error) {
+        console.error('上传失败:', error);
+        alert('上传失败，请检查网络或联系管理员。\n错误信息: ' + error.message);
+        btn.innerText = '重试上传';
+        btn.disabled = false;
+    } else {
+        alert('✅ 成绩已成功同步到后台数据库！');
+        btn.innerText = '已上传';
+        btn.style.backgroundColor = '#ccc'; // 变灰
+    }
+}
