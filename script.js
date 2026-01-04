@@ -598,74 +598,57 @@ if (restartBtn) {
 }
 
 // ====== 上传到云端（挂到 window，供 HTML onclick 调用） ======
-// ====== 上传到云端（最终稳定调试版） ======
+// ====== 上传到云端（正式版） ======
 window.uploadToCloud = async function () {
+  const btn = document.getElementById('uploadBtn');
+  if (!btn) return;
+
+  // 必须所有题都答完
+  const firstEmpty = answers.findIndex(a => a === null);
+  if (firstEmpty !== -1) {
+    alert("你还没完成所有题目，无法上传。");
+    return;
+  }
+
+  // 必须已经生成结果（防止没走 showResult）
+  if (!window.latestScores || !window.latestMainSecond) {
+    alert("结果数据尚未生成，请先完成测评并进入结果页。");
+    return;
+  }
+
+  btn.innerText = '正在上传...';
+  btn.disabled = true;
+
   try {
-    const btn = document.getElementById('uploadBtn');
-
-    alert("① uploadToCloud 被调用了");
-
-    const firstEmpty = answers.findIndex(a => a === null);
-    if (firstEmpty !== -1) {
-      alert("❌ 还没完成测评");
-      return;
-    }
-
-    if (!btn) {
-      alert("❌ 找不到 uploadBtn");
-      return;
-    }
-
-    alert(
-      "② 准备上传，当前数据如下：\n" +
-      JSON.stringify(
-        {
-          latestScores: window.latestScores,
-          latestMainSecond: window.latestMainSecond,
-          userInfo
-        },
-        null,
-        2
-      )
-    );
-
-    btn.innerText = '正在上传...';
-    btn.disabled = true;
-
     const resultText = document.getElementById('mainType')?.innerText || "";
 
     const res = await supabase
       .from('scores')
-      .insert([
-        {
-          player_name: userInfo.name,
-          department: userInfo.department,
-          position: userInfo.position,
-          disc_result: resultText,
-          d_count: window.latestScores?.D,
-          i_count: window.latestScores?.I,
-          s_count: window.latestScores?.S,
-          c_count: window.latestScores?.C,
-          main_type: window.latestMainSecond?.mainType,
-          second_type: window.latestMainSecond?.secondType,
-          second_type: window.latestMainSecond?.secondType
-        }
-      ]);
+      .insert([{
+        player_name: userInfo.name,
+        department: userInfo.department,
+        position: userInfo.position,
+        disc_result: resultText,
 
-    alert("③ Supabase 返回结果：\n" + JSON.stringify(res, null, 2));
+        d_count: window.latestScores.D,
+        i_count: window.latestScores.I,
+        s_count: window.latestScores.S,
+        c_count: window.latestScores.C,
 
-    if (res.error) {
-      throw res.error;
-    }
+        main_type: window.latestMainSecond.mainType,
+        second_type: window.latestMainSecond.secondType
+      }]);
+
+    if (res.error) throw res.error;
 
     alert("✅ 上传成功！");
     btn.innerText = '已上传';
     btn.disabled = true;
     btn.style.backgroundColor = '#ccc';
-
   } catch (err) {
-    alert("🔥 真正的错误在这里：\n" + JSON.stringify(err, null, 2));
-    console.error("真实错误：", err);
+    console.error("上传失败：", err);
+    alert("上传失败：\n" + (err?.message || "未知错误"));
+    btn.innerText = '重试上传';
+    btn.disabled = false;
   }
 };
-
