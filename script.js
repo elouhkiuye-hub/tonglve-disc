@@ -1,13 +1,21 @@
-// ====== 1. 初始化 Supabase (添加在文件最顶端) ======
+console.log("✅ script.js 已加载");
+
+// ====== 1. 初始化 Supabase (必须放在文件最顶端) ======
 const supabaseUrl = 'https://afuewegupycldgqwmyiv.supabase.co';
 const supabaseKey = 'sb_publishable_vca15z0QMvN6nkQTFd90wQ_FuCFHKWQ';
-// 注意：这里要用 window.supabase，因为我们是从 HTML 的 CDN 引入的
-const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+// ✅ 关键修复：不要用 const supabase（重复加载会 “already been declared”）
+// ✅ 用 var + window 缓存：即使 script.js 被加载两次也不会炸
+var supabase =
+  window._supabaseClient ||
+  (window._supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey));
+
 let userInfo = {
   name: "",
   department: "",
   position: ""
 };
+
 // ====== 题目数据（40题） ======
 const questions = [
   {
@@ -378,7 +386,6 @@ const answers = new Array(questions.length).fill(null);
 
 // ====== 拿到页面元素 ======
 const questionBox = document.getElementById("questionBox");
-
 const questionEl = document.getElementById("question");
 const optionsEl = document.getElementById("options");
 const selectedTextEl = document.getElementById("selectedText");
@@ -392,7 +399,7 @@ const mainTypeEl = document.getElementById("mainType");
 const scoreListEl = document.getElementById("scoreList");
 const restartBtn = document.getElementById("restartBtn");
 
-// 结果说明（你之后可以写得更详细）
+// 结果说明
 const desc = {
   D: "D（支配型）：目标导向、果断直接、喜欢挑战。",
   I: "I（影响型）：外向热情、善于表达、重视互动。",
@@ -400,45 +407,46 @@ const desc = {
   C: "C（谨慎型）：理性严谨、重视标准与准确。",
 };
 
-// 选项显示用 A/B/C/D（不暴露 DISC）
+// 选项显示用 A/B/C/D
 const labels = ["A", "B", "C", "D"];
-// 处理用户信息表单提交
+
+// 处理用户信息表单提交（新手安全版）
 const userForm = document.getElementById("userForm");
-userForm.addEventListener("submit", function (event) {
-  event.preventDefault(); // 防止页面刷新
+console.log("userForm 元素是：", userForm);
 
-  // 获取表单中的数据
-  userInfo.name = document.getElementById("name").value;
-  userInfo.department = document.getElementById("department").value;
-  userInfo.position = document.getElementById("position").value;
+if (userForm) {
+  userForm.addEventListener("submit", function (event) {
+    event.preventDefault();
+    console.log("✅ 表单 submit 被触发了");
 
-  // 显示测评页面，隐藏用户信息表单
-  document.getElementById("userInfo").style.display = "none";
-  questionBox.style.display = "block";
+    userInfo.name = document.getElementById("name").value;
+    userInfo.department = document.getElementById("department").value;
+    userInfo.position = document.getElementById("position").value;
 
-  // 初始渲染题目
-  renderQuestion();
-});
+    console.log("✅ 收到用户信息：", userInfo);
+
+    document.getElementById("userInfo").style.display = "none";
+    questionBox.style.display = "block";
+
+    currentIndex = 0;
+    renderQuestion();
+  });
+} else {
+  console.error("❌ 找不到 #userForm，请检查 HTML 里的 id 是否正确");
+}
+
 // ====== 渲染当前题目 ======
 function renderQuestion() {
   const q = questions[currentIndex];
-
-  // 标题
   questionEl.textContent = q.title;
-
-  // 清空旧选项
   optionsEl.innerHTML = "";
 
-  // 生成新选项按钮
   q.options.forEach((opt, index) => {
     const btn = document.createElement("button");
     btn.className = "option";
     btn.dataset.type = opt.type;
-
-    // 显示 A/B/C/D
     btn.textContent = `${labels[index]}：${opt.text}`;
 
-    // 回显高亮（按 D/I/S/C 判断）
     if (answers[currentIndex] === opt.type) {
       btn.classList.add("selected");
     }
@@ -451,39 +459,33 @@ function renderQuestion() {
       );
       btn.classList.add("selected");
 
-      // 底部只显示 A/B/C/D
       selectedTextEl.textContent = `你选择了：${labels[index]}`;
     });
 
     optionsEl.appendChild(btn);
   });
 
-  // 底部文字回显（只显示 A/B/C/D）
   if (answers[currentIndex] === null) {
     selectedTextEl.textContent = "你还没选择";
   } else {
     const idx = q.options.findIndex((opt) => opt.type === answers[currentIndex]);
-    selectedTextEl.textContent =
-      idx >= 0 ? `你选择了：${labels[idx]}` : "你已作答";
+    selectedTextEl.textContent = idx >= 0 ? `你选择了：${labels[idx]}` : "你已作答";
   }
 
-  // 按钮状态
-  prevBtn.disabled = currentIndex === 0;
-  nextBtn.textContent = currentIndex === questions.length - 1 ? "提交" : "下一题";
+  if (prevBtn) prevBtn.disabled = currentIndex === 0;
+  if (nextBtn) nextBtn.textContent = currentIndex === questions.length - 1 ? "提交" : "下一题";
 
-  // 进度条 + 题号
   const total = questions.length;
   const now = currentIndex + 1;
   const percent = Math.round((now / total) * 100);
-  progressBarEl.style.width = percent + "%";
-  progressTextEl.textContent = `进度：第 ${now} / ${total} 题`;
+  if (progressBarEl) progressBarEl.style.width = percent + "%";
+  if (progressTextEl) progressTextEl.textContent = `进度：第 ${now} / ${total} 题`;
 }
 
-// ====== 出结果：主型 + 次型 ======
-function showResult() {
-  // 在结果页显示用户信息
-  mainTypeEl.textContent = `测评结果：${userInfo.name}（${userInfo.department} - ${userInfo.position}）\n\n`;
+// ====== 出结果 ======
+let resultChart; // ✅ 防止重复画图
 
+function showResult() {
   const firstEmpty = answers.findIndex((a) => a === null);
   if (firstEmpty !== -1) {
     alert(`你还有第 ${firstEmpty + 1} 题没有作答哦～`);
@@ -491,6 +493,8 @@ function showResult() {
     renderQuestion();
     return;
   }
+
+  mainTypeEl.textContent = `测评结果：${userInfo.name}（${userInfo.department} - ${userInfo.position}）\n\n`;
 
   const scores = { D: 0, I: 0, S: 0, C: 0 };
   answers.forEach((t) => (scores[t] += 1));
@@ -502,7 +506,6 @@ function showResult() {
   questionBox.style.display = "none";
   resultBox.style.display = "block";
 
-  // 显示主型 + 次型
   if (secondScore === mainScore) {
     const tied = entries.filter(([_, v]) => v === mainScore).map(([k]) => k);
     mainTypeEl.textContent += `并列主型：${tied.join(" / ")}（你在不同场景可能会切换风格）`;
@@ -518,113 +521,120 @@ function showResult() {
   const explainText = typesToExplain.map((t) => `• ${desc[t]}`).join("\n");
   mainTypeEl.textContent += "\n" + explainText;
 
-// 渲染分数列表
+  // 分数列表
   scoreListEl.innerHTML = "";
   entries.forEach(([k, v]) => {
     const li = document.createElement("li");
     li.innerHTML = `<span>${k}</span><strong>${v}</strong>`;
     scoreListEl.appendChild(li);
   });
-  
-  // 使用 Chart.js 绘制图表
-  const ctx = document.getElementById("resultChart").getContext("2d");
 
-  // 创建条形图
-  const resultChart = new Chart(ctx, {
-    type: "bar", // 条形图
-    data: {
-      labels: ["D", "I", "S", "C"], // DISC 类型标签
-      datasets: [{
-        label: '你的 DISC 类型数量',
-        data: [scores.D, scores.I, scores.S, scores.C], // DISC 类型的得分
-        backgroundColor: ['#ff4d4d', '#4d94ff', '#66b266', '#ffcc00'], // 每个条形的颜色
-        borderColor: ['#ff0000', '#0051ff', '#1e7a1e', '#ff9900'], // 每个条形的边框颜色
-        borderWidth: 1
-      }]
-    },
-    options: {
-      scales: {
-        y: {
-          beginAtZero: true
+  // Chart.js 图表（重复进入结果页先销毁）
+  const canvas = document.getElementById("resultChart");
+  if (canvas && window.Chart) {
+    const ctx = canvas.getContext("2d");
+    if (resultChart) resultChart.destroy();
+
+    resultChart = new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: ["D", "I", "S", "C"],
+        datasets: [{
+          label: '你的 DISC 类型数量',
+          data: [scores.D, scores.I, scores.S, scores.C],
+          borderWidth: 1
+        }]
+      },
+      options: {
+        scales: {
+          y: { beginAtZero: true }
         }
       }
+    });
+  }
+}
+
+// ====== 上一题 / 下一题（加保护，避免元素为空报错） ======
+if (prevBtn) {
+  prevBtn.addEventListener("click", () => {
+    if (currentIndex > 0) {
+      currentIndex--;
+      renderQuestion();
     }
   });
 }
-// ====== 上一题 / 下一题 ======
-prevBtn.addEventListener("click", () => {
-  if (currentIndex > 0) {
-    currentIndex--;
-    renderQuestion();
-  }
-});
 
-nextBtn.addEventListener("click", () => {
-  if (answers[currentIndex] === null) {
-    alert("请先选择一个选项再继续～");
+if (nextBtn) {
+  nextBtn.addEventListener("click", () => {
+    if (answers[currentIndex] === null) {
+      alert("请先选择一个选项再继续～");
+      return;
+    }
+
+    if (currentIndex < questions.length - 1) {
+      currentIndex++;
+      renderQuestion();
+    } else {
+      showResult();
+    }
+  });
+}
+
+// 再测一次
+if (restartBtn) {
+  restartBtn.addEventListener("click", () => {
+    for (let i = 0; i < answers.length; i++) answers[i] = null;
+    currentIndex = 0;
+
+    questionBox.style.display = "block";
+    resultBox.style.display = "none";
+
+    renderQuestion();
+  });
+}
+
+// ====== 上传到云端（挂到 window，供 HTML onclick 调用） ======
+window.uploadToCloud = async function () {
+  const btn = document.getElementById('uploadBtn');
+
+  // ✅ 更严格：必须所有题都答完
+  const firstEmpty = answers.findIndex(a => a === null);
+  if (firstEmpty !== -1) {
+    alert("你还没完成所有题目，无法上传。");
     return;
   }
 
-  if (currentIndex < questions.length - 1) {
-    currentIndex++;
-    renderQuestion();
-  } else {
-    showResult();
+  if (!btn) {
+    alert("找不到上传按钮 #uploadBtn");
+    return;
   }
-});
 
-// 再测一次
-restartBtn.addEventListener("click", () => {
-  for (let i = 0; i < answers.length; i++) answers[i] = null;
-  currentIndex = 0;
+  btn.innerText = '正在上传...';
+  btn.disabled = true;
 
-  questionBox.style.display = "block";
-  resultBox.style.display = "none";
+  const resultText = document.getElementById('mainType')?.innerText || "";
 
-  renderQuestion();
-});
+  const { data, error } = await supabase
+    .from('scores')
+    .insert([
+      {
+        player_name: userInfo.name,
+        department: userInfo.department,
+        position: userInfo.position,
+        disc_result: resultText,
+        score: 0
+      }
+    ]);
 
-// 初次渲染
-renderQuestion();
-// ====== 2. 定义上传到云端的函数 (添加在文件最底端) ======
-// 我们把它挂载到 window 对象上，这样 HTML 里的按钮才能找到它
-window.uploadToCloud = async function() {
-    const btn = document.getElementById('uploadBtn');
-    
-    // 防止还没测完就点
-    if (!userInfo.name) {
-        alert("请先完成测评！");
-        return;
-    }
-
-    // 按钮变色，防止重复点击
-    btn.innerText = '正在上传...';
+  if (error) {
+    console.error('上传失败:', error);
+    alert('上传失败，请检查网络或联系管理员。\n错误信息: ' + error.message);
+    btn.innerText = '重试上传';
+    btn.disabled = false;
+  } else {
+    alert('✅ 成绩已成功同步到后台数据库！');
+    btn.innerText = '已上传';
     btn.disabled = true;
-
-    // 获取页面上显示的最终结果文字
-    const resultText = document.getElementById('mainType').innerText;
-
-    // 发送到 Supabase
-    const { data, error } = await supabase
-        .from('scores')
-        .insert([
-            { 
-                player_name: userInfo.name,     // 直接使用 script.js 里的变量
-                department: userInfo.department,
-                position: userInfo.position,
-                disc_result: resultText,        // 存入比如 "D (支配型)..."
-                score: 0                        // 暂时填0，如果你想存具体分数，我可以教你改
-            }
-        ]);
-
-    if (error) {
-        console.error('上传失败:', error);
-        alert('上传失败，请检查网络或联系管理员。\n错误信息: ' + error.message);
-        btn.innerText = '重试上传';
-        btn.disabled = false;
-    } else {
-        alert('✅ 成绩已成功同步到后台数据库！');
-        btn.innerText = '已上传';
-        btn.style.backgroundColor = '#ccc'; // 变灰
-    }
-}
+    btn.style.backgroundColor = '#ccc';
+  }
+};
