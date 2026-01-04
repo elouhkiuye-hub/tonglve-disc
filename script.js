@@ -500,12 +500,12 @@ function showResult() {
 
   const scores = { D: 0, I: 0, S: 0, C: 0 };
   answers.forEach((t) => (scores[t] += 1));
-  latestScores = scores;
+  window.latestScores = scores;
 
   const entries = Object.entries(scores).sort((a, b) => b[1] - a[1]);
   const [mainType, mainScore] = entries[0];
   const [secondType, secondScore] = entries[1];
-  latestMainSecond = { mainType, secondType };
+  window.latestMainSecond = { mainType, secondType };
 
   questionBox.style.display = "none";
   resultBox.style.display = "block";
@@ -601,7 +601,7 @@ if (restartBtn) {
 window.uploadToCloud = async function () {
   const btn = document.getElementById('uploadBtn');
 
-  // ✅ 更严格：必须所有题都答完
+  //  更严格：必须所有题都答完
   const firstEmpty = answers.findIndex(a => a === null);
   if (firstEmpty !== -1) {
     alert("你还没完成所有题目，无法上传。");
@@ -628,14 +628,14 @@ window.uploadToCloud = async function () {
   disc_result: resultText,
 
   // 四个 DISC 数量
-  d_count: latestScores?.D ?? 0,
-  i_count: latestScores?.I ?? 0,
-  s_count: latestScores?.S ?? 0,
-  c_count: latestScores?.C ?? 0,
+  d_count: window.latestScores?.D ?? 0,
+  i_count: window.latestScores?.I ?? 0,
+  s_count: window.latestScores?.S ?? 0,
+  c_count: window.latestScores?.C ?? 0,
 
   // 主型 / 次型
-  main_type: latestMainSecond?.mainType ?? null,
-  second_type: latestMainSecond?.secondType ?? null,
+  main_type: window.latestMainSecond?.mainType ?? null,
+  second_type: window.latestMainSecond?.secondType ?? null,
 
   score: 0
 }
