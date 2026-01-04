@@ -6,16 +6,18 @@
   <title>DISC 测评</title>
   <link rel="stylesheet" href="style.css">
 
-   <!-- 引入 Chart.js 库 -->
+  <!-- 先加载第三方库，再加载你自己的脚本 -->
+  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
 <body>
-   <!-- 公司 Logo -->
-<div id="logo" style="position: absolute; top: 20px; left: 20px;">
-   <img src="images/logo.png" alt="公司 Logo" style="width: 200px; height: auto;">
-</div>
+  <!-- 公司 Logo -->
+  <div id="logo" style="position: absolute; top: 20px; left: 20px;">
+    <img src="images/logo.png" alt="公司 Logo" style="width: 200px; height: auto;">
+  </div>
 
   <h1>DISC 测评</h1>
   <p>请选择最符合你的选项</p>
@@ -23,7 +25,7 @@
   <!-- 用户信息 -->
   <div id="userInfo" class="box">
     <h2>填写您的信息</h2>
-    <form id="userForm">
+    <form id="userForm" autocomplete="off">
       <div class="form-group">
         <label for="name">姓名：</label>
         <input type="text" id="name" required placeholder="请输入您的姓名">
@@ -36,23 +38,26 @@
         <label for="position">岗位：</label>
         <input type="text" id="position" required placeholder="请输入您的岗位">
       </div>
+
+      <!-- type=submit 会触发 script.js 里的 submit 监听 -->
       <button type="submit" class="navBtn primary">开始测评</button>
     </form>
   </div>
 
   <!-- 测评内容区，初始隐藏 -->
   <div id="questionBox" style="display:none;">
-
     <div class="box">
       <h2 id="question"></h2>
       <div class="options" id="options"></div>
       <p id="selectedText" class="selectedText">你还没选择</p>
 
       <div class="nav">
-        <button id="prevBtn" class="navBtn">上一题</button>
-        <button id="nextBtn" class="navBtn primary">下一题</button>
+        <!-- 这里明确 type=button，避免按钮在某些情况下被当成提交按钮 -->
+        <button id="prevBtn" class="navBtn" type="button">上一题</button>
+        <button id="nextBtn" class="navBtn primary" type="button">下一题</button>
       </div>
     </div>
+
     <p id="progressText" class="progressText"></p>
     <div class="progressWrap">
       <div class="progressBar" id="progressBar"></div>
@@ -64,19 +69,22 @@
     <h2>你的 DISC 结果</h2>
     <p id="mainType" class="selectedText"></p>
 
-    <!-- 添加一个 Canvas 用于绘制图表 -->
-  <canvas id="resultChart" width="400" height="200"></canvas>
+    <!-- 图表 Canvas -->
+    <canvas id="resultChart" width="400" height="200"></canvas>
 
     <ul id="scoreList"></ul>
-    <button id="uploadBtn" class="navBtn" style="margin-top:14px; background-color: #28a745; color: white;" onclick="uploadToCloud()">
-      📤 提交结果到后台
+
+    <!-- 上传按钮：明确 type=button，避免任何“意外提交表单” -->
+    <button id="uploadBtn" class="navBtn" type="button" onclick="uploadToCloud()">
+      提交结果到后台
     </button>
-    
-    <button id="restartBtn" class="navBtn primary" style="margin-top:14px;">
+
+    <button id="restartBtn" class="navBtn primary" type="button" style="margin-top:14px;">
       再测一次
     </button>
   </div>
 
+  <!-- 最后加载你自己的脚本（确保 DOM 都已生成） -->
   <script src="script.js"></script>
 </body>
 </html>
