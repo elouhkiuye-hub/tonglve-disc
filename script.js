@@ -598,58 +598,73 @@ if (restartBtn) {
 }
 
 // ====== 上传到云端（挂到 window，供 HTML onclick 调用） ======
+// ====== 上传到云端（最终稳定调试版） ======
 window.uploadToCloud = async function () {
-  const btn = document.getElementById('uploadBtn');
+  try {
+    const btn = document.getElementById('uploadBtn');
 
-  //  更严格：必须所有题都答完
-  const firstEmpty = answers.findIndex(a => a === null);
-  if (firstEmpty !== -1) {
-    alert("你还没完成所有题目，无法上传。");
-    return;
-  }
+    alert("① uploadToCloud 被调用了");
 
-  if (!btn) {
-    alert("找不到上传按钮 #uploadBtn");
-    return;
-  }
+    const firstEmpty = answers.findIndex(a => a === null);
+    if (firstEmpty !== -1) {
+      alert("❌ 还没完成测评");
+      return;
+    }
 
-  btn.innerText = '正在上传...';
-  btn.disabled = true;
+    if (!btn) {
+      alert("❌ 找不到 uploadBtn");
+      return;
+    }
 
-  const resultText = document.getElementById('mainType')?.innerText || "";
+    alert(
+      "② 准备上传，当前数据如下：\n" +
+      JSON.stringify(
+        {
+          latestScores: window.latestScores,
+          latestMainSecond: window.latestMainSecond,
+          userInfo
+        },
+        null,
+        2
+      )
+    );
 
-  const { data, error } = await supabase
-    .from('scores')
-    .insert([
-     {
-  player_name: userInfo.name,
-  department: userInfo.department,
-  position: userInfo.position,
-  disc_result: resultText,
+    btn.innerText = '正在上传...';
+    btn.disabled = true;
 
-  // 四个 DISC 数量
-  d_count: window.latestScores?.D ?? 0,
-  i_count: window.latestScores?.I ?? 0,
-  s_count: window.latestScores?.S ?? 0,
-  c_count: window.latestScores?.C ?? 0,
+    const resultText = document.getElementById('mainType')?.innerText || "";
 
-  // 主型 / 次型
-  main_type: window.latestMainSecond?.mainType ?? null,
-  second_type: window.latestMainSecond?.secondType ?? null,
+    const res = await supabase
+      .from('scores')
+      .insert([
+        {
+          player_name: userInfo.name,
+          department: userInfo.department,
+          position: userInfo.position,
+          disc_result: resultText,
+          d_count: window.latestScores?.D,
+          i_count: window.latestScores?.I,
+          s_count: window.latestScores?.S,
+          c_count: window.latestScores?.C,
+          main_type: window.latestMainSecond?.mainType,
+          second_type: window.latestMainSecond?.secondType,
+          score: 0
+        }
+      ]);
 
-  score: 0
-}
-    ]);
+    alert("③ Supabase 返回结果：\n" + JSON.stringify(res, null, 2));
 
-  if (error) {
-    console.error('上传失败:', error);
-    alert('上传失败，请检查网络或联系管理员。\n错误信息: ' + error.message);
-    btn.innerText = '重试上传';
-    btn.disabled = false;
-  } else {
-    alert('✅ 成绩已成功同步到后台数据库！');
+    if (res.error) {
+      throw res.error;
+    }
+
+    alert("✅ 上传成功！");
     btn.innerText = '已上传';
     btn.disabled = true;
     btn.style.backgroundColor = '#ccc';
+
+  } catch (err) {
+    alert("🔥 真正的错误在这里：\n" + JSON.stringify(err, null, 2));
+    console.error("真实错误：", err);
   }
 };
