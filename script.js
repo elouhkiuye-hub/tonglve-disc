@@ -411,6 +411,7 @@ const desc = {
 const labels = ["A", "B", "C", "D"];
 
 // 处理用户信息表单提交（新手安全版）
+alert("执行到：准备绑定 userForm");
 const userForm = document.getElementById("userForm");
 console.log("userForm 元素是：", userForm);
 
@@ -638,3 +639,4 @@ window.uploadToCloud = async function () {
     btn.style.backgroundColor = '#ccc';
   }
 };
+
