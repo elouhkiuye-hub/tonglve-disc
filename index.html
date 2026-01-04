@@ -8,6 +8,7 @@
 
    <!-- 引入 Chart.js 库 -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
 <body>
@@ -67,6 +68,10 @@
   <canvas id="resultChart" width="400" height="200"></canvas>
 
     <ul id="scoreList"></ul>
+    <button id="uploadBtn" class="navBtn" style="margin-top:14px; background-color: #28a745; color: white;" onclick="uploadToCloud()">
+      📤 提交结果到后台
+    </button>
+    
     <button id="restartBtn" class="navBtn primary" style="margin-top:14px;">
       再测一次
     </button>
