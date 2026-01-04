@@ -648,7 +648,7 @@ window.uploadToCloud = async function () {
           c_count: window.latestScores?.C,
           main_type: window.latestMainSecond?.mainType,
           second_type: window.latestMainSecond?.secondType,
-          score: 0
+          second_type: window.latestMainSecond?.secondType
         }
       ]);
 
@@ -668,3 +668,4 @@ window.uploadToCloud = async function () {
     console.error("真实错误：", err);
   }
 };
+
