@@ -383,7 +383,237 @@ const questions = [
     ],
   },
 ];
+console.log("✅ script.js 已加载");
 
+/* ======================
+   1. Supabase 初始化
+====================== */
+const supabaseUrl = "https://ufqwcdftdgfnpxgalvau.supabase.co";
+const supabaseKey = "sb_publishable_CCmJITHHkwSw9-hXPLnOfA_LE5HI8AH";
+
+var supabaseClient =
+  window._supabaseClient ||
+  (window._supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey));
+
+/* ======================
+   2. 基础状态
+====================== */
+let userInfo = { name: "", department: "", position: "" };
+
+let currentStage = "DISC"; // DISC | BIG5
+let currentIndex = 0;
+
+let answersDISC = [];
+let answersBIG5 = [];
+
+let latestScores = null;
+let latestMainSecond = null;
+let latestBig5 = null;
+
+let autoUploaded = false;
+
+/* ======================
+   3. DISC 题目（你原来的）
+====================== */
+// ⚠️ 为节省篇幅，这里假设你已有 const questions = [...]（40题）
+// 👉 请保留你原来的 DISC questions 数组，不要删
+// 👉 下面直接继续用 questions 这个变量
+
+/* ======================
+   4. 大五人格 20 题
+====================== */
+const big5Questions = [
+  // E 外向
+  { text: "我很容易和陌生人聊起来", trait: "E", reverse: false },
+  { text: "在群体中我通常比较活跃", trait: "E", reverse: false },
+  { text: "我喜欢成为大家关注的焦点", trait: "E", reverse: false },
+  { text: "我在社交场合中常常比较安静", trait: "E", reverse: true },
+
+  // A 宜人
+  { text: "我愿意体谅他人的感受", trait: "A", reverse: false },
+  { text: "我乐于帮助别人", trait: "A", reverse: false },
+  { text: "我通常信任他人的善意", trait: "A", reverse: false },
+  { text: "我在与人相处时容易挑剔", trait: "A", reverse: true },
+
+  // C 尽责
+  { text: "我做事有计划、有条理", trait: "C", reverse: false },
+  { text: "我会坚持把事情做到最后", trait: "C", reverse: false },
+  { text: "我做事认真，重视责任", trait: "C", reverse: false },
+  { text: "我有时会拖延该做的事情", trait: "C", reverse: true },
+
+  // N 神经质
+  { text: "我容易感到紧张或焦虑", trait: "N", reverse: false },
+  { text: "我情绪波动比较大", trait: "N", reverse: false },
+  { text: "我容易为小事担心", trait: "N", reverse: false },
+  { text: "我在压力下通常能保持冷静", trait: "N", reverse: true },
+
+  // O 开放
+  { text: "我对新事物和新想法感兴趣", trait: "O", reverse: false },
+  { text: "我喜欢尝试不同的体验", trait: "O", reverse: false },
+  { text: "我富有想象力", trait: "O", reverse: false },
+  { text: "我不太喜欢改变原有的方式", trait: "O", reverse: true },
+];
+
+/* ======================
+   5. 页面元素
+====================== */
+const questionEl = document.getElementById("question");
+const optionsEl = document.getElementById("options");
+const selectedTextEl = document.getElementById("selectedText");
+const nextBtn = document.getElementById("nextBtn");
+const prevBtn = document.getElementById("prevBtn");
+
+const questionBox = document.getElementById("questionBox");
+const resultBox = document.getElementById("resultBox");
+const mainTypeEl = document.getElementById("mainType");
+const scoreListEl = document.getElementById("scoreList");
+
+/* ======================
+   6. 渲染题目（DISC / BIG5 通用）
+====================== */
+function renderQuestion() {
+  let q;
+  optionsEl.innerHTML = "";
+
+  if (currentStage === "DISC") {
+    q = questions[currentIndex];
+    questionEl.textContent = q.title;
+
+    q.options.forEach((opt, idx) => {
+      const btn = document.createElement("button");
+      btn.className = "option";
+      btn.textContent = opt.text;
+      btn.onclick = () => {
+        answersDISC[currentIndex] = opt.type;
+        nextBtn.disabled = false;
+      };
+      optionsEl.appendChild(btn);
+    });
+  } else {
+    q = big5Questions[currentIndex];
+    questionEl.textContent = `（大五人格）第 ${currentIndex + 1} 题：${q.text}`;
+
+    for (let i = 1; i <= 5; i++) {
+      const btn = document.createElement("button");
+      btn.className = "option";
+      btn.textContent = i;
+      btn.onclick = () => {
+        answersBIG5[currentIndex] = i;
+        nextBtn.disabled = false;
+      };
+      optionsEl.appendChild(btn);
+    }
+  }
+
+  nextBtn.disabled = true;
+}
+
+/* ======================
+   7. 下一题逻辑
+====================== */
+nextBtn.onclick = () => {
+  if (currentStage === "DISC") {
+    if (currentIndex < questions.length - 1) {
+      currentIndex++;
+      renderQuestion();
+    } else {
+      // DISC 结束 → 进入 BIG5
+      currentStage = "BIG5";
+      currentIndex = 0;
+      renderQuestion();
+    }
+  } else {
+    if (currentIndex < big5Questions.length - 1) {
+      currentIndex++;
+      renderQuestion();
+    } else {
+      showResult();
+    }
+  }
+};
+
+/* ======================
+   8. 结果计算
+====================== */
+function showResult() {
+  questionBox.style.display = "none";
+  resultBox.style.display = "block";
+
+  /* ---- DISC ---- */
+  const scores = { D: 0, I: 0, S: 0, C: 0 };
+  answersDISC.forEach(t => scores[t]++);
+  latestScores = scores;
+
+  const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+  latestMainSecond = { mainType: sorted[0][0], secondType: sorted[1][0] };
+
+  /* ---- BIG5 ---- */
+  const sum = { E: [], A: [], C: [], N: [], O: [] };
+
+  big5Questions.forEach((q, idx) => {
+    let val = answersBIG5[idx];
+    if (q.reverse) val = 6 - val;
+    sum[q.trait].push(val);
+  });
+
+  const avg = {};
+  Object.keys(sum).forEach(k => {
+    avg[k] = +(sum[k].reduce((a, b) => a + b, 0) / sum[k].length).toFixed(2);
+  });
+  latestBig5 = avg;
+
+  /* ---- 展示 ---- */
+  mainTypeEl.innerText =
+    `DISC 主型：${latestMainSecond.mainType}\n` +
+    `DISC 次型：${latestMainSecond.secondType}\n\n` +
+    `大五人格（1~5 分）：\n` +
+    `外向性 E：${avg.E}\n` +
+    `宜人性 A：${avg.A}\n` +
+    `尽责性 C：${avg.C}\n` +
+    `神经质 N：${avg.N}\n` +
+    `开放性 O：${avg.O}`;
+
+  autoUpload();
+}
+
+/* ======================
+   9. 自动上传 Supabase
+====================== */
+async function autoUpload() {
+  if (autoUploaded) return;
+  autoUploaded = true;
+
+  const payload = {
+    name: userInfo.name,
+    department: userInfo.department,
+    position: userInfo.position,
+
+    d_score: latestScores.D,
+    i_score: latestScores.I,
+    s_score: latestScores.S,
+    c_score: latestScores.C,
+
+    main_type: latestMainSecond.mainType,
+    secondary_type: latestMainSecond.secondType,
+
+    scores: latestScores,
+
+    big5_e: latestBig5.E,
+    big5_a: latestBig5.A,
+    big5_c: latestBig5.C,
+    big5_n: latestBig5.N,
+    big5_o: latestBig5.O,
+    big5_scores: latestBig5,
+  };
+
+  const { error } = await supabaseClient.from("disc_results").insert([payload]);
+
+  if (error) {
+    alert("上传失败：" + error.message);
+  } else {
+    console.log("✅ 已上传 DISC + 大五人格");
+  }
+}
 // ====== 状态：当前第几题 + 每题的答案（D/I/S/C） ======
 let currentIndex = 0;
 const answers = new Array(questions.length).fill(null);
@@ -701,3 +931,4 @@ window.uploadToCloud = async function () {
     btn.style.backgroundColor = '#ccc';
   }
 };
+
