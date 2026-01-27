@@ -13,7 +13,12 @@ body {
   height: auto;  /* 高度自适应 */
   margin-bottom: 20px; /* 给 logo 和下面的内容添加一些空隙 */
 }
-
+/* 桌面端 Logo 左上角 */
+#logo{
+  position: absolute;
+  top: 20px;
+  left: 20px;
+}
 /* 增加标题样式 */
 /* 修改 h1 样式，使标题有一个深绿色背景 */
 h1 {
@@ -225,3 +230,4 @@ button[type="submit"]:hover {
     margin-top: 0;           /* 防止多余空白 */
   }
 }
+
