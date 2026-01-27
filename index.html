@@ -11,6 +11,9 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- ✅ 关键：让 script.js 在 DOM 完整后再执行 -->
+  <script src="script.js" defer></script>
 </head>
 
 <body>
@@ -25,7 +28,9 @@
   <!-- 用户信息 -->
   <div id="userInfo" class="box">
     <h2>填写您的信息</h2>
-    <form id="userForm" autocomplete="off">
+
+    <!-- ✅ 防止默认提交跳转/刷新 -->
+    <form id="userForm" autocomplete="off" action="javascript:void(0)">
       <div class="form-group">
         <label for="name">姓名：</label>
         <input type="text" id="name" required placeholder="请输入您的姓名">
@@ -41,7 +46,7 @@
         <input type="text" id="position" required placeholder="请输入您的岗位">
       </div>
 
-      <button type="submit" class="navBtn primary">开始测评</button>
+      <button id="startBtn" type="submit" class="navBtn primary">开始测评</button>
     </form>
   </div>
 
@@ -81,7 +86,6 @@
       </div>
     </div>
 
-    <!-- 图表 Canvas -->
     <div class="chartWrap">
       <canvas id="resultChart" width="400" height="200"></canvas>
     </div>
@@ -92,7 +96,6 @@
 
     <ul id="scoreList"></ul>
 
-    <!-- 上传按钮 -->
     <button id="uploadBtn" class="navBtn" type="button" onclick="uploadToCloud()">
       提交结果到后台
     </button>
@@ -102,7 +105,29 @@
     </button>
   </div>
 
-  <!-- 你的脚本 -->
-  <script src="script.js"></script>
+  <!-- ✅ 备用：如果 submit 监听没绑定，用按钮点击也能启动（不改 script.js） -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const form = document.getElementById("userForm");
+      const btn = document.getElementById("startBtn");
+
+      // 如果 script.js 没绑定 submit，这里兜底：阻止刷新
+      if (form) {
+        form.addEventListener("submit", (e) => {
+          e.preventDefault();
+        });
+      }
+
+      // 这个兜底不会替代你的逻辑，只是避免“卡住”
+      // 真正切换题目仍由 script.js 的 renderQuestion / 绑定逻辑控制
+      if (btn) {
+        btn.addEventListener("click", () => {
+          // 仅用于检查：点了至少不会刷新
+          // 如果你仍卡住，说明 script.js 没跑或报错
+          console.log("✅ startBtn clicked");
+        });
+      }
+    });
+  </script>
 </body>
 </html>
