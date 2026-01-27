@@ -1,278 +1,69 @@
-/* =====================
-   基础页面样式
-===================== */
-body {
-  font-family: "Microsoft YaHei", Arial, sans-serif;
-  text-align: center;
-  margin: 0;
-  background-color: #f4f6fb;
-  background-image: url('images/background.jpg');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  min-height: 100vh;
-}
-
-/* =====================
-   Logo（默认：桌面端）
-===================== */
-#logo {
-  position: absolute;
-  top: 20px;
-  left: 20px;
-  z-index: 10; /* 保证在背景之上 */
-}
-
-#logo img {
-  width: 200px;
-  height: auto;
-}
-
-/* =====================
-   标题样式
-===================== */
-h1 {
-  background-color: #2c6e2f;
-  color: #ffffff;
-  font-size: 36px;
-  padding: 10px 20px;
-  border-radius: 8px;
-  margin: 120px auto 10px; /* 👈 关键：给桌面端标题让出 logo 空间 */
-  width: fit-content;
-  text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
-}
-
-h2 {
-  font-size: 24px;
-  color: #2c6e2f;
-  font-weight: bold;
-  margin-bottom: 16px;
-}
-
-p {
-  font-weight: bold;
-  color: white;
-  font-size: 18px;
-  margin-top: 10px;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.6);
-}
-
-/* =====================
-   内容卡片
-===================== */
-.box {
-  width: min(700px, 92%);
-  margin: 30px auto;
-  background: white;
-  border-radius: 14px;
-  padding: 20px;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
-  text-align: left;
-}
-
-/* =====================
-   选项按钮
-===================== */
-.options {
-  display: grid;
-  gap: 10px;
-  margin-top: 14px;
-}
-
-.option {
-  border: 1px solid #d7def0;
-  background: #f8fafc;
-  padding: 12px;
-  border-radius: 12px;
-  cursor: pointer;
-  font-size: 16px;
-}
-
-.option:hover {
-  border-color: #2c6e2f;
-}
-
-.option.selected {
-  border-color: #2c6e2f;
-  background: #e8f0ff;
-  font-weight: 700;
-}
-
-/* =====================
-   导航按钮
-===================== */
-.nav {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  margin-top: 16px;
-}
-
-.navBtn {
-  padding: 10px 14px;
-  border-radius: 12px;
-  border: 1px solid #d7def0;
-  background: #f8fafc;
-  cursor: pointer;
-  font-size: 16px;
-}
-
-.navBtn.primary {
-  background: #2c6e2f;
-  color: white;
-  border-color: #2c6e2f;
-}
-
-.navBtn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* =====================
-   结果文字换行
-===================== */
-#mainType {
-  white-space: pre-line;
-}
-
-/* =====================
-   🔥 手机端强制修复（重点）
-===================== */
-@media (max-width: 768px) {
-
-  /* ① Logo 不再悬浮 */
-  #logo {
-    position: static !important;
-    margin: 20px auto 10px;
-    text-align: center;
-  }
-
-  #logo img {
-    width: 160px;
-  }
-
-  /* ② 标题不再被压 */
-  h1 {
-    margin: 10px auto 10px !important;
-    font-size: 26px;
-  }
-}
-/* ===== 结果页布局优化 ===== */
-#resultLayout {
-  display: grid;
-  gap: 14px;
-  margin-top: 12px;
-}
-
-.resultCard {
-  border-radius: 14px;
-  overflow: hidden;
-  border: 1px solid #e6eaf5;
-  background: #ffffff;      /* 白底，保证文字可见 */
-  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
-}
-
-.cardHeader {
-  padding: 12px 14px;
-  font-weight: 800;
-  color: #ffffff;
-  letter-spacing: 0.5px;
-}
-
-.cardBody {
-  padding: 14px;
-  color: #1f2937;           /* 深色字体，手机/电脑都清晰 */
-  font-size: 16px;
-  line-height: 1.7;
-  white-space: pre-line;    /* 支持 \n 换行 */
-}
-
-/* 两种卡片不同颜色 */
-.discCard .cardHeader {
-  background: #2c6e2f;      /* 绿色 */
-}
-
-.big5Card .cardHeader {
-  background: #1e50a0;      /* 蓝色 */
-}
-
-/* 手机端更紧凑 */
-@media (max-width: 768px) {
-  .cardBody { font-size: 15px; }
-}
 /* =========================
-   首页表单（填写信息）优化
-   让表单居中 + 每行对齐
+   ✅ 首页表单强制优化（终极生效版）
+   只影响 #userInfo 里面的表单
 ========================= */
 
-/* 让白色卡片里的内容在大屏也别太散 */
-#userInfo .box,
-#userInfo {
-  display: flex;
-  justify-content: center;
+/* 让 “填写您的信息” 这张白卡：内容居中显示 */
+#userInfo.box {
+  text-align: center !important;
 }
 
-/* 表单整体居中并限制最大宽度 */
-#userForm {
-  width: 100%;
-  max-width: 520px;     /* 电脑端表单宽度 */
+/* h2 也居中一点更舒服 */
+#userInfo.box h2 {
+  text-align: center;
+  margin-bottom: 18px;
+}
+
+/* 表单整体宽度限制 + 居中 */
+#userInfo.box #userForm {
+  width: min(520px, 92%);
   margin: 0 auto;
 }
 
-/* 每一行：label 左，input 右 */
-#userForm .form-group {
-  display: flex;
+/* 每一行：用 grid 强制对齐（比 flex 更稳） */
+#userInfo.box #userForm .form-group {
+  display: grid !important;
+  grid-template-columns: 84px 1fr;  /* 左边label固定宽度，右边输入框自适应 */
   align-items: center;
-  gap: 12px;
-  margin-bottom: 14px;
+  column-gap: 12px;
+  row-gap: 6px;
+  margin: 12px 0;
 }
 
-/* label 固定宽度，对齐 */
-#userForm .form-group label {
-  width: 72px;          /* “姓名/部门/岗位”对齐 */
-  margin: 0;
+/* label：右对齐，固定宽度 */
+#userInfo.box #userForm .form-group label {
+  margin: 0 !important;
   text-align: right;
   white-space: nowrap;
+  font-weight: 700;
+  color: #1f2937;
 }
 
-/* input 占满剩余空间 */
-#userForm .form-group input {
-  flex: 1;
-  min-width: 0;
+/* input：占满右侧 */
+#userInfo.box #userForm .form-group input {
+  width: 100% !important;
+  box-sizing: border-box;
 }
 
-/* 开始测评按钮不要占满全宽，放中间更美观 */
-#userForm button[type="submit"] {
-  width: auto;
-  min-width: 160px;
+/* 开始测评按钮：别占满，居中 */
+#userInfo.box #userForm button[type="submit"] {
+  width: 180px !important;
+  margin: 16px auto 0 !important;
   display: block;
-  margin: 12px auto 0;
+  border-radius: 10px;
 }
 
-/* =========================
-   手机端：改成上下排列更舒服
-========================= */
+/* 手机端：改成上下布局 */
 @media (max-width: 768px) {
-  #userForm {
-    max-width: 92%;
+  #userInfo.box #userForm .form-group {
+    grid-template-columns: 1fr;
   }
 
-  #userForm .form-group {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 6px;
-  }
-
-  #userForm .form-group label {
-    width: auto;
+  #userInfo.box #userForm .form-group label {
     text-align: left;
   }
 
-  #userForm button[type="submit"] {
-    width: 100%;
-    min-width: 0;
+  #userInfo.box #userForm button[type="submit"] {
+    width: 100% !important;
   }
 }
-
-
-
