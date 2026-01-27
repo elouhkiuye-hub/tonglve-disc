@@ -157,3 +157,47 @@ p {
     font-size: 26px;
   }
 }
+/* ===== 结果页布局优化 ===== */
+#resultLayout {
+  display: grid;
+  gap: 14px;
+  margin-top: 12px;
+}
+
+.resultCard {
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid #e6eaf5;
+  background: #ffffff;      /* 白底，保证文字可见 */
+  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+}
+
+.cardHeader {
+  padding: 12px 14px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.5px;
+}
+
+.cardBody {
+  padding: 14px;
+  color: #1f2937;           /* 深色字体，手机/电脑都清晰 */
+  font-size: 16px;
+  line-height: 1.7;
+  white-space: pre-line;    /* 支持 \n 换行 */
+}
+
+/* 两种卡片不同颜色 */
+.discCard .cardHeader {
+  background: #2c6e2f;      /* 绿色 */
+}
+
+.big5Card .cardHeader {
+  background: #1e50a0;      /* 蓝色 */
+}
+
+/* 手机端更紧凑 */
+@media (max-width: 768px) {
+  .cardBody { font-size: 15px; }
+}
+
