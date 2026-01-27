@@ -200,4 +200,79 @@ p {
 @media (max-width: 768px) {
   .cardBody { font-size: 15px; }
 }
+/* =========================
+   首页表单（填写信息）优化
+   让表单居中 + 每行对齐
+========================= */
+
+/* 让白色卡片里的内容在大屏也别太散 */
+#userInfo .box,
+#userInfo {
+  display: flex;
+  justify-content: center;
+}
+
+/* 表单整体居中并限制最大宽度 */
+#userForm {
+  width: 100%;
+  max-width: 520px;     /* 电脑端表单宽度 */
+  margin: 0 auto;
+}
+
+/* 每一行：label 左，input 右 */
+#userForm .form-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+/* label 固定宽度，对齐 */
+#userForm .form-group label {
+  width: 72px;          /* “姓名/部门/岗位”对齐 */
+  margin: 0;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* input 占满剩余空间 */
+#userForm .form-group input {
+  flex: 1;
+  min-width: 0;
+}
+
+/* 开始测评按钮不要占满全宽，放中间更美观 */
+#userForm button[type="submit"] {
+  width: auto;
+  min-width: 160px;
+  display: block;
+  margin: 12px auto 0;
+}
+
+/* =========================
+   手机端：改成上下排列更舒服
+========================= */
+@media (max-width: 768px) {
+  #userForm {
+    max-width: 92%;
+  }
+
+  #userForm .form-group {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+
+  #userForm .form-group label {
+    width: auto;
+    text-align: left;
+  }
+
+  #userForm button[type="submit"] {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+
 
