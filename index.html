@@ -67,7 +67,17 @@
   <!-- 结果区 -->
   <div class="box" id="resultBox" style="display:none;">
     <h2>你的 DISC 结果</h2>
-    <p id="mainType" class="selectedText"></p>
+    <div id="resultLayout">
+  <div class="resultCard discCard">
+    <div class="cardHeader">DISC 结果</div>
+    <div id="discText" class="cardBody"></div>
+  </div>
+
+  <div class="resultCard big5Card">
+    <div class="cardHeader">大五人格结果</div>
+    <div id="big5Text" class="cardBody"></div>
+  </div>
+</div>
 
     <!-- 图表 Canvas -->
     <canvas id="resultChart" width="400" height="200"></canvas>
@@ -172,6 +182,7 @@
 </body>
 
 </html>
+
 
 
 
