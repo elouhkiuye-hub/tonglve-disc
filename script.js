@@ -2,7 +2,7 @@ console.log("✅ script.js 已加载");
 
 // ====== 1. 初始化 Supabase (必须放在文件最顶端) ======
 const supabaseUrl = 'https://ufqwcdftdgfnpxgalvau.supabase.co';
-const supabaseKey = 'sb_publishable_vca15z0QMvN6nkQTFd90wQ_FuCFHKWQ';
+const supabaseKey = 'sb_publishable_CCmJITHHkwSw9-hXPLnOfA_LE5HI8AH';
 
 // ✅ 用 window 缓存：即使 script.js 被加载两次也不会炸
 var supabaseClient =
