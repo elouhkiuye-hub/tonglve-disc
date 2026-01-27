@@ -1,26 +1,36 @@
 console.log("✅ script.js 已加载");
 
-// ====== 1. 初始化 Supabase (必须放在文件最顶端) ======
-const supabaseUrl = 'https://ufqwcdftdgfnpxgalvau.supabase.co';
-const supabaseKey = 'sb_publishable_CCmJITHHkwSw9-hXPLnOfA_LE5HI8AH';
+/* ======================
+   1) Supabase 初始化
+====================== */
+const supabaseUrl = "https://ufqwcdftdgfnpxgalvau.supabase.co";
+const supabaseKey = "sb_publishable_CCmJITHHkwSw9-hXPLnOfA_LE5HI8AH";
 
-// ✅ 用 window 缓存：即使 script.js 被加载两次也不会炸
 var supabaseClient =
   window._supabaseClient ||
   (window._supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey));
 
-let userInfo = {
-  name: "",
-  department: "",
-  position: ""
-};
-let latestScores = null;        // 记录 D / I / S / C 数量
-let latestMainSecond = null;    // 记录 主型 / 次型
+/* ======================
+   2) 用户信息 & 总状态
+====================== */
+let userInfo = { name: "", department: "", position: "" };
 
-// ✅ 方案1：防止重复自动上传
-let autoUploaded = false;
+// 阶段：DISC -> BIG5 -> RESULT
+let currentStage = "DISC"; // "DISC" | "BIG5"
+let currentIndex = 0;
 
-// ====== 题目数据（40题） ======
+const answersDISC = new Array(40).fill(null);  // 每题存 "D/I/S/C"
+const answersBIG5 = new Array(20).fill(null);  // 每题存 1~5
+
+let latestDiscScores = null;        // {D,I,S,C}
+let latestMainSecond = null;        // {mainType, secondType}
+let latestBig5 = null;             // {E,A,C,N,O} (平均分 1~5)
+
+let autoUploaded = false;          // 防止重复上传
+
+/* ======================
+   3) DISC 40题（你的原题库）
+====================== */
 const questions = [
   {
     title: "第 1 题：在团队讨论中，我更倾向于：",
@@ -383,44 +393,10 @@ const questions = [
     ],
   },
 ];
-console.log("✅ script.js 已加载");
 
 /* ======================
-   1. Supabase 初始化
-====================== */
-const supabaseUrl = "https://ufqwcdftdgfnpxgalvau.supabase.co";
-const supabaseKey = "sb_publishable_CCmJITHHkwSw9-hXPLnOfA_LE5HI8AH";
-
-var supabaseClient =
-  window._supabaseClient ||
-  (window._supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey));
-
-/* ======================
-   2. 基础状态
-====================== */
-let userInfo = { name: "", department: "", position: "" };
-
-let currentStage = "DISC"; // DISC | BIG5
-let currentIndex = 0;
-
-let answersDISC = [];
-let answersBIG5 = [];
-
-let latestScores = null;
-let latestMainSecond = null;
-let latestBig5 = null;
-
-let autoUploaded = false;
-
-/* ======================
-   3. DISC 题目（你原来的）
-====================== */
-// ⚠️ 为节省篇幅，这里假设你已有 const questions = [...]（40题）
-// 👉 请保留你原来的 DISC questions 数组，不要删
-// 👉 下面直接继续用 questions 这个变量
-
-/* ======================
-   4. 大五人格 20 题
+   4) 大五人格 20题（1~5分）
+   reverse=true 表示反向计分：6-分数
 ====================== */
 const big5Questions = [
   // E 外向
@@ -455,480 +431,444 @@ const big5Questions = [
 ];
 
 /* ======================
-   5. 页面元素
+   5) DOM 元素
 ====================== */
+const userForm = document.getElementById("userForm");
+const userInfoBox = document.getElementById("userInfo");
+
+const questionBox = document.getElementById("questionBox");
 const questionEl = document.getElementById("question");
 const optionsEl = document.getElementById("options");
 const selectedTextEl = document.getElementById("selectedText");
-const nextBtn = document.getElementById("nextBtn");
+
 const prevBtn = document.getElementById("prevBtn");
+const nextBtn = document.getElementById("nextBtn");
 
-const questionBox = document.getElementById("questionBox");
-const resultBox = document.getElementById("resultBox");
-const mainTypeEl = document.getElementById("mainType");
-const scoreListEl = document.getElementById("scoreList");
-
-/* ======================
-   6. 渲染题目（DISC / BIG5 通用）
-====================== */
-function renderQuestion() {
-  let q;
-  optionsEl.innerHTML = "";
-
-  if (currentStage === "DISC") {
-    q = questions[currentIndex];
-    questionEl.textContent = q.title;
-
-    q.options.forEach((opt, idx) => {
-      const btn = document.createElement("button");
-      btn.className = "option";
-      btn.textContent = opt.text;
-      btn.onclick = () => {
-        answersDISC[currentIndex] = opt.type;
-        nextBtn.disabled = false;
-      };
-      optionsEl.appendChild(btn);
-    });
-  } else {
-    q = big5Questions[currentIndex];
-    questionEl.textContent = `（大五人格）第 ${currentIndex + 1} 题：${q.text}`;
-
-    for (let i = 1; i <= 5; i++) {
-      const btn = document.createElement("button");
-      btn.className = "option";
-      btn.textContent = i;
-      btn.onclick = () => {
-        answersBIG5[currentIndex] = i;
-        nextBtn.disabled = false;
-      };
-      optionsEl.appendChild(btn);
-    }
-  }
-
-  nextBtn.disabled = true;
-}
-
-/* ======================
-   7. 下一题逻辑
-====================== */
-nextBtn.onclick = () => {
-  if (currentStage === "DISC") {
-    if (currentIndex < questions.length - 1) {
-      currentIndex++;
-      renderQuestion();
-    } else {
-      // DISC 结束 → 进入 BIG5
-      currentStage = "BIG5";
-      currentIndex = 0;
-      renderQuestion();
-    }
-  } else {
-    if (currentIndex < big5Questions.length - 1) {
-      currentIndex++;
-      renderQuestion();
-    } else {
-      showResult();
-    }
-  }
-};
-
-/* ======================
-   8. 结果计算
-====================== */
-function showResult() {
-  questionBox.style.display = "none";
-  resultBox.style.display = "block";
-
-  /* ---- DISC ---- */
-  const scores = { D: 0, I: 0, S: 0, C: 0 };
-  answersDISC.forEach(t => scores[t]++);
-  latestScores = scores;
-
-  const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
-  latestMainSecond = { mainType: sorted[0][0], secondType: sorted[1][0] };
-
-  /* ---- BIG5 ---- */
-  const sum = { E: [], A: [], C: [], N: [], O: [] };
-
-  big5Questions.forEach((q, idx) => {
-    let val = answersBIG5[idx];
-    if (q.reverse) val = 6 - val;
-    sum[q.trait].push(val);
-  });
-
-  const avg = {};
-  Object.keys(sum).forEach(k => {
-    avg[k] = +(sum[k].reduce((a, b) => a + b, 0) / sum[k].length).toFixed(2);
-  });
-  latestBig5 = avg;
-
-  /* ---- 展示 ---- */
-  mainTypeEl.innerText =
-    `DISC 主型：${latestMainSecond.mainType}\n` +
-    `DISC 次型：${latestMainSecond.secondType}\n\n` +
-    `大五人格（1~5 分）：\n` +
-    `外向性 E：${avg.E}\n` +
-    `宜人性 A：${avg.A}\n` +
-    `尽责性 C：${avg.C}\n` +
-    `神经质 N：${avg.N}\n` +
-    `开放性 O：${avg.O}`;
-
-  autoUpload();
-}
-
-/* ======================
-   9. 自动上传 Supabase
-====================== */
-async function autoUpload() {
-  if (autoUploaded) return;
-  autoUploaded = true;
-
-  const payload = {
-    name: userInfo.name,
-    department: userInfo.department,
-    position: userInfo.position,
-
-    d_score: latestScores.D,
-    i_score: latestScores.I,
-    s_score: latestScores.S,
-    c_score: latestScores.C,
-
-    main_type: latestMainSecond.mainType,
-    secondary_type: latestMainSecond.secondType,
-
-    scores: latestScores,
-
-    big5_e: latestBig5.E,
-    big5_a: latestBig5.A,
-    big5_c: latestBig5.C,
-    big5_n: latestBig5.N,
-    big5_o: latestBig5.O,
-    big5_scores: latestBig5,
-  };
-
-  const { error } = await supabaseClient.from("disc_results").insert([payload]);
-
-  if (error) {
-    alert("上传失败：" + error.message);
-  } else {
-    console.log("✅ 已上传 DISC + 大五人格");
-  }
-}
-// ====== 状态：当前第几题 + 每题的答案（D/I/S/C） ======
-let currentIndex = 0;
-const answers = new Array(questions.length).fill(null);
-
-// ====== 拿到页面元素 ======
-const questionBox = document.getElementById("questionBox");
-const questionEl = document.getElementById("question");
-const optionsEl = document.getElementById("options");
-const selectedTextEl = document.getElementById("selectedText");
 const progressBarEl = document.getElementById("progressBar");
 const progressTextEl = document.getElementById("progressText");
-const prevBtn = document.getElementById("prevBtn");
-const nextBtn = document.getElementById("nextBtn");
 
 const resultBox = document.getElementById("resultBox");
 const mainTypeEl = document.getElementById("mainType");
 const scoreListEl = document.getElementById("scoreList");
 const restartBtn = document.getElementById("restartBtn");
+const uploadBtn = document.getElementById("uploadBtn");
 
-// 结果说明
-const desc = {
+/* ======================
+   6) 文案
+====================== */
+const discDesc = {
   D: "D（支配型）：目标导向、果断直接、喜欢挑战。",
   I: "I（影响型）：外向热情、善于表达、重视互动。",
   S: "S（稳健型）：温和可靠、重视关系与稳定。",
   C: "C（谨慎型）：理性严谨、重视标准与准确。",
 };
 
-// 选项显示用 A/B/C/D
-const labels = ["A", "B", "C", "D"];
+const discLabels = ["A", "B", "C", "D"];
 
-// 处理用户信息表单提交（新手安全版）
-alert("执行到：准备绑定 userForm");
-const userForm = document.getElementById("userForm");
-console.log("userForm 元素是：", userForm);
+const big5ChoiceLabels = [
+  "1 非常不同意",
+  "2 不同意",
+  "3 一般",
+  "4 同意",
+  "5 非常同意",
+];
 
+/* ======================
+   7) 绑定表单：开始测评
+====================== */
 if (userForm) {
-  userForm.addEventListener("submit", function (event) {
-    event.preventDefault();
-    console.log("✅ 表单 submit 被触发了");
+  userForm.addEventListener("submit", (e) => {
+    e.preventDefault();
 
-    userInfo.name = document.getElementById("name").value;
-    userInfo.department = document.getElementById("department").value;
-    userInfo.position = document.getElementById("position").value;
+    userInfo.name = document.getElementById("name")?.value?.trim() || "";
+    userInfo.department = document.getElementById("department")?.value?.trim() || "";
+    userInfo.position = document.getElementById("position")?.value?.trim() || "";
 
-    console.log("✅ 收到用户信息：", userInfo);
-
-    document.getElementById("userInfo").style.display = "none";
-    questionBox.style.display = "block";
-
+    // 重置状态
+    currentStage = "DISC";
     currentIndex = 0;
-
-    // ✅ 重新开始时允许再次自动上传
+    answersDISC.fill(null);
+    answersBIG5.fill(null);
+    latestDiscScores = null;
+    latestMainSecond = null;
+    latestBig5 = null;
     autoUploaded = false;
+
+    // UI切换
+    if (userInfoBox) userInfoBox.style.display = "none";
+    if (questionBox) questionBox.style.display = "block";
+    if (resultBox) resultBox.style.display = "none";
 
     renderQuestion();
   });
 } else {
-  console.error("❌ 找不到 #userForm，请检查 HTML 里的 id 是否正确");
+  console.error("❌ 找不到 #userForm，请检查 HTML 里 id 是否正确");
 }
 
-// ====== 渲染当前题目 ======
+/* ======================
+   8) 渲染题目（DISC / BIG5 通用）
+====================== */
 function renderQuestion() {
-  const q = questions[currentIndex];
-  questionEl.textContent = q.title;
+  if (!questionEl || !optionsEl || !nextBtn) return;
+
   optionsEl.innerHTML = "";
+  selectedTextEl && (selectedTextEl.textContent = "你还没选择");
+  nextBtn.textContent = "下一题";
+  nextBtn.disabled = true;
 
-  q.options.forEach((opt, index) => {
-    const btn = document.createElement("button");
-    btn.className = "option";
-    btn.dataset.type = opt.type;
-    btn.textContent = `${labels[index]}：${opt.text}`;
+  // 进度（总 60 题）
+  const total = questions.length + big5Questions.length;
+  const done = (currentStage === "DISC")
+    ? currentIndex
+    : questions.length + currentIndex;
+  updateProgress(done + 1, total);
 
-    if (answers[currentIndex] === opt.type) {
-      btn.classList.add("selected");
-    }
+  if (currentStage === "DISC") {
+    const q = questions[currentIndex];
+    questionEl.textContent = q.title;
 
-    btn.addEventListener("click", () => {
-      answers[currentIndex] = opt.type;
+    q.options.forEach((opt, idx) => {
+      const btn = document.createElement("button");
+      btn.className = "option";
+      btn.textContent = `${discLabels[idx]}：${opt.text}`;
 
-      [...optionsEl.querySelectorAll(".option")].forEach((b) =>
-        b.classList.remove("selected")
-      );
-      btn.classList.add("selected");
+      btn.addEventListener("click", () => {
+        answersDISC[currentIndex] = opt.type;
 
-      selectedTextEl.textContent = `你选择了：${labels[index]}`;
+        // 高亮
+        [...optionsEl.querySelectorAll(".option")].forEach(b => b.classList.remove("selected"));
+        btn.classList.add("selected");
+
+        selectedTextEl && (selectedTextEl.textContent = `你选择了：${discLabels[idx]}`);
+        nextBtn.disabled = false;
+      });
+
+      optionsEl.appendChild(btn);
     });
 
-    optionsEl.appendChild(btn);
-  });
+    // 上一题按钮
+    if (prevBtn) prevBtn.disabled = (currentIndex === 0);
 
-  if (answers[currentIndex] === null) {
-    selectedTextEl.textContent = "你还没选择";
+    // 最后一题改“进入大五”
+    if (currentIndex === questions.length - 1) {
+      nextBtn.textContent = "进入大五人格";
+    }
   } else {
-    const idx = q.options.findIndex((opt) => opt.type === answers[currentIndex]);
-    selectedTextEl.textContent = idx >= 0 ? `你选择了：${labels[idx]}` : "你已作答";
+    const q = big5Questions[currentIndex];
+    questionEl.textContent = `大五人格（第 ${currentIndex + 1} / ${big5Questions.length} 题）：${q.text}`;
+
+    // 1~5 选项
+    for (let i = 1; i <= 5; i++) {
+      const btn = document.createElement("button");
+      btn.className = "option";
+      btn.textContent = big5ChoiceLabels[i - 1];
+
+      btn.addEventListener("click", () => {
+        answersBIG5[currentIndex] = i;
+
+        // 高亮
+        [...optionsEl.querySelectorAll(".option")].forEach(b => b.classList.remove("selected"));
+        btn.classList.add("selected");
+
+        selectedTextEl && (selectedTextEl.textContent = `你选择了：${i}`);
+        nextBtn.disabled = false;
+      });
+
+      optionsEl.appendChild(btn);
+    }
+
+    // 上一题按钮（大五阶段也可回退）
+    if (prevBtn) prevBtn.disabled = (currentIndex === 0);
+
+    // 大五最后一题
+    if (currentIndex === big5Questions.length - 1) {
+      nextBtn.textContent = "提交并查看结果";
+    }
   }
+}
 
-  if (prevBtn) prevBtn.disabled = currentIndex === 0;
-  if (nextBtn) nextBtn.textContent = currentIndex === questions.length - 1 ? "提交" : "下一题";
-
-  const total = questions.length;
-  const now = currentIndex + 1;
-  const percent = Math.round((now / total) * 100);
-  if (progressBarEl) progressBarEl.style.width = percent + "%";
+function updateProgress(now, total) {
   if (progressTextEl) progressTextEl.textContent = `进度：第 ${now} / ${total} 题`;
+  if (progressBarEl) progressBarEl.style.width = Math.round((now / total) * 100) + "%";
 }
 
-// ====== 出结果 ======
-let resultChart; // ✅ 防止重复画图
-
-function showResult() {
-  const firstEmpty = answers.findIndex((a) => a === null);
-  if (firstEmpty !== -1) {
-    alert(`你还有第 ${firstEmpty + 1} 题没有作答哦～`);
-    currentIndex = firstEmpty;
-    renderQuestion();
-    return;
-  }
-
-  mainTypeEl.textContent = `测评结果：${userInfo.name}（${userInfo.department} - ${userInfo.position}）\n\n`;
-
-  const scores = { D: 0, I: 0, S: 0, C: 0 };
-  answers.forEach((t) => (scores[t] += 1));
-
-  // ✅ 同时写入 window 和本地变量，方便上传用
-  window.latestScores = scores;
-  latestScores = scores;
-
-  const entries = Object.entries(scores).sort((a, b) => b[1] - a[1]);
-  const [mainType, mainScore] = entries[0];
-  const [secondType, secondScore] = entries[1];
-
-  // ✅ 同时写入 window 和本地变量，方便上传用
-  window.latestMainSecond = { mainType, secondType };
-  latestMainSecond = { mainType, secondType };
-
-  questionBox.style.display = "none";
-  resultBox.style.display = "block";
-
-  if (secondScore === mainScore) {
-    const tied = entries.filter(([_, v]) => v === mainScore).map(([k]) => k);
-    mainTypeEl.textContent += `并列主型：${tied.join(" / ")}（你在不同场景可能会切换风格）`;
-  } else {
-    mainTypeEl.textContent += `主型 + 次型：${mainType} + ${secondType}（${mainType} 更突出）`;
-  }
-
-  const typesToExplain =
-    secondScore === mainScore
-      ? entries.filter(([_, v]) => v === mainScore).map(([k]) => k)
-      : [mainType, secondType];
-
-  const explainText = typesToExplain.map((t) => `• ${desc[t]}`).join("\n");
-  mainTypeEl.textContent += "\n" + explainText;
-
-  // 分数列表
-  scoreListEl.innerHTML = "";
-  entries.forEach(([k, v]) => {
-    const li = document.createElement("li");
-    li.innerHTML = `<span>${k}</span><strong>${v}</strong>`;
-    scoreListEl.appendChild(li);
-  });
-
-  // Chart.js 图表（重复进入结果页先销毁）
-  const canvas = document.getElementById("resultChart");
-  if (canvas && window.Chart) {
-    const ctx = canvas.getContext("2d");
-    if (resultChart) resultChart.destroy();
-
-    resultChart = new Chart(ctx, {
-      type: "bar",
-      data: {
-        labels: ["D", "I", "S", "C"],
-        datasets: [{
-          label: '你的 DISC 类型数量',
-          data: [scores.D, scores.I, scores.S, scores.C],
-          borderWidth: 1
-        }]
-      },
-      options: {
-        scales: {
-          y: { beginAtZero: true }
-        }
-      }
-    });
-  }
-
-  // ✅ 方案1：出结果后自动上传（只上传一次）
-  if (!autoUploaded) {
-    autoUploaded = true;
-
-    const btn = document.getElementById('uploadBtn');
-    if (btn) {
-      btn.innerText = '正在自动上传...';
-      btn.disabled = true;
-    }
-
-    // 自动调用上传
-    window.uploadToCloud();
-  }
-}
-
-// ====== 上一题 / 下一题（加保护，避免元素为空报错） ======
+/* ======================
+   9) 上一题 / 下一题
+====================== */
 if (prevBtn) {
   prevBtn.addEventListener("click", () => {
-    if (currentIndex > 0) {
-      currentIndex--;
-      renderQuestion();
-    }
+    if (currentIndex <= 0) return;
+    currentIndex--;
+    renderQuestion();
   });
 }
 
 if (nextBtn) {
   nextBtn.addEventListener("click", () => {
-    if (answers[currentIndex] === null) {
-      alert("请先选择一个选项再继续～");
-      return;
-    }
+    // 必须选了才能下一步
+    if (currentStage === "DISC") {
+      if (!answersDISC[currentIndex]) {
+        alert("请先选择一个选项再继续～");
+        return;
+      }
 
-    if (currentIndex < questions.length - 1) {
-      currentIndex++;
-      renderQuestion();
+      if (currentIndex < questions.length - 1) {
+        currentIndex++;
+        renderQuestion();
+      } else {
+        // DISC 完成 -> BIG5
+        currentStage = "BIG5";
+        currentIndex = 0;
+        renderQuestion();
+      }
     } else {
-      showResult();
+      if (!answersBIG5[currentIndex]) {
+        alert("请先选择一个选项再继续～");
+        return;
+      }
+
+      if (currentIndex < big5Questions.length - 1) {
+        currentIndex++;
+        renderQuestion();
+      } else {
+        // BIG5 完成 -> 结果
+        showResult();
+      }
     }
   });
 }
 
-// 再测一次
-if (restartBtn) {
-  restartBtn.addEventListener("click", () => {
-    for (let i = 0; i < answers.length; i++) answers[i] = null;
-    currentIndex = 0;
+/* ======================
+   10) 结果页（DISC + BIG5）
+====================== */
+let discBarChart = null;
+let big5RadarChart = null;
 
-    questionBox.style.display = "block";
-    resultBox.style.display = "none";
-
-    // ✅ 再测一次允许再次自动上传
-    autoUploaded = false;
-
+function showResult() {
+  // 防漏答
+  const discEmpty = answersDISC.findIndex(a => a === null);
+  if (discEmpty !== -1) {
+    alert(`DISC 还有第 ${discEmpty + 1} 题没答完`);
+    currentStage = "DISC";
+    currentIndex = discEmpty;
     renderQuestion();
+    return;
+  }
+  const big5Empty = answersBIG5.findIndex(a => a === null);
+  if (big5Empty !== -1) {
+    alert(`大五人格还有第 ${big5Empty + 1} 题没答完`);
+    currentStage = "BIG5";
+    currentIndex = big5Empty;
+    renderQuestion();
+    return;
+  }
+
+  // UI切换
+  if (questionBox) questionBox.style.display = "none";
+  if (resultBox) resultBox.style.display = "block";
+
+  /* ---- DISC 计算 ---- */
+  const discScores = { D: 0, I: 0, S: 0, C: 0 };
+  answersDISC.forEach(t => discScores[t]++);
+  latestDiscScores = discScores;
+
+  const entries = Object.entries(discScores).sort((a, b) => b[1] - a[1]);
+  const [mainType, mainScore] = entries[0];
+  const [secondType, secondScore] = entries[1];
+  latestMainSecond = { mainType, secondType };
+
+  /* ---- BIG5 计算（平均分 1~5）---- */
+  const bucket = { E: [], A: [], C: [], N: [], O: [] };
+
+  big5Questions.forEach((q, idx) => {
+    let v = answersBIG5[idx];
+    if (q.reverse) v = 6 - v;
+    bucket[q.trait].push(v);
   });
+
+  const avg = {};
+  Object.keys(bucket).forEach(k => {
+    avg[k] = +(bucket[k].reduce((a, b) => a + b, 0) / bucket[k].length).toFixed(2);
+  });
+  latestBig5 = avg;
+
+  /* ---- 文本展示 ---- */
+  if (mainTypeEl) {
+    mainTypeEl.textContent =
+      `测评结果：${userInfo.name}（${userInfo.department} - ${userInfo.position}）\n\n` +
+      `DISC 主型 + 次型：${mainType} + ${secondType}\n` +
+      `• ${discDesc[mainType]}\n` +
+      `• ${discDesc[secondType]}\n\n` +
+      `大五人格（1~5 分）：\n` +
+      `外向性 E：${avg.E}\n` +
+      `宜人性 A：${avg.A}\n` +
+      `尽责性 C：${avg.C}\n` +
+      `神经质 N：${avg.N}\n` +
+      `开放性 O：${avg.O}`;
+  }
+
+  // DISC 分数列表
+  if (scoreListEl) {
+    scoreListEl.innerHTML = "";
+    entries.forEach(([k, v]) => {
+      const li = document.createElement("li");
+      li.innerHTML = `<span>${k}</span><strong>${v}</strong>`;
+      scoreListEl.appendChild(li);
+    });
+  }
+
+  // DISC 柱状图
+  const discCanvas = document.getElementById("resultChart");
+  if (discCanvas && window.Chart) {
+    const ctx = discCanvas.getContext("2d");
+    if (discBarChart) discBarChart.destroy();
+
+    discBarChart = new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: ["D", "I", "S", "C"],
+        datasets: [{
+          label: "DISC 数量",
+          data: [discScores.D, discScores.I, discScores.S, discScores.C],
+          borderWidth: 1
+        }]
+      },
+      options: {
+        scales: { y: { beginAtZero: true } }
+      }
+    });
+  }
+
+  // BIG5 雷达图（需要你 HTML 有 big5RadarChart canvas）
+  const radarCanvas = document.getElementById("big5RadarChart");
+  if (radarCanvas && window.Chart) {
+    const ctx = radarCanvas.getContext("2d");
+    if (big5RadarChart) big5RadarChart.destroy();
+
+    big5RadarChart = new Chart(ctx, {
+      type: "radar",
+      data: {
+        labels: ["外向性 E", "宜人性 A", "尽责性 C", "神经质 N", "开放性 O"],
+        datasets: [{
+          label: "大五人格（1–5）",
+          data: [avg.E, avg.A, avg.C, avg.N, avg.O],
+          fill: true,
+          borderWidth: 2
+        }]
+      },
+      options: {
+        scales: {
+          r: {
+            min: 1,
+            max: 5,
+            ticks: { stepSize: 1 }
+          }
+        }
+      }
+    });
+  }
+
+  // 自动上传
+  autoUploadToSupabase();
 }
 
-// ====== ✅ 上传到 Supabase：写入 disc_results（字段对齐你现在的表） ======
-window.uploadToCloud = async function () {
-  const btn = document.getElementById('uploadBtn');
+/* ======================
+   11) 自动上传 Supabase（一次）
+   表 disc_results 建议新增字段：
+   - big5_e, big5_a, big5_c, big5_n, big5_o (numeric)
+   - big5_scores (jsonb)
+====================== */
+async function autoUploadToSupabase() {
+  if (autoUploaded) return;
+  autoUploaded = true;
 
-  // 更严格：必须所有题都答完
-  const firstEmpty = answers.findIndex(a => a === null);
-  if (firstEmpty !== -1) {
-    alert("你还没完成所有题目，无法上传。");
-    if (btn) {
-      btn.innerText = '提交结果到后台';
-      btn.disabled = false;
-    }
-    return;
-  }
-
-  if (!btn) {
-    alert("找不到上传按钮 #uploadBtn");
-    return;
-  }
-
-  // 如果是手动点按钮也能上传（保留重试功能）
-  if (btn.disabled === false) {
-    btn.innerText = '正在上传...';
-    btn.disabled = true;
-  }
-
-  // ✅ 取分数：优先用 window.latestScores（你 showResult 已经写入）
-  const scoresObj = window.latestScores || latestScores;
-  const mainSecond = window.latestMainSecond || latestMainSecond;
-
-  if (!scoresObj || typeof scoresObj !== "object") {
-    alert("找不到分数数据 latestScores，请先完成测评再提交。");
-    btn.innerText = '重试上传';
-    btn.disabled = false;
-    return;
+  if (uploadBtn) {
+    uploadBtn.innerText = "正在自动上传...";
+    uploadBtn.disabled = true;
   }
 
   const payload = {
+    // 如果你表里没有 name 字段，会报 “column does not exist”
+    // 你可以在 Supabase 表里加一个 name(text)；否则把下一行删掉
     name: userInfo.name,
+
     department: userInfo.department,
     position: userInfo.position,
 
-    d_score: Number(scoresObj.D ?? 0),
-    i_score: Number(scoresObj.I ?? 0),
-    s_score: Number(scoresObj.S ?? 0),
-    c_score: Number(scoresObj.C ?? 0),
+    d_score: latestDiscScores?.D ?? 0,
+    i_score: latestDiscScores?.I ?? 0,
+    s_score: latestDiscScores?.S ?? 0,
+    c_score: latestDiscScores?.C ?? 0,
 
-    main_type: mainSecond?.mainType ?? null,
-    secondary_type: mainSecond?.secondType ?? null,
+    main_type: latestMainSecond?.mainType ?? null,
+    secondary_type: latestMainSecond?.secondType ?? null,
 
-    // scores(jsonb)
-    scores: scoresObj
+    scores: latestDiscScores,
+
+    // BIG5（需要你在表里加字段）
+    big5_e: latestBig5?.E ?? null,
+    big5_a: latestBig5?.A ?? null,
+    big5_c: latestBig5?.C ?? null,
+    big5_n: latestBig5?.N ?? null,
+    big5_o: latestBig5?.O ?? null,
+    big5_scores: latestBig5,
   };
 
-  const { error } = await supabaseClient
-    .from('disc_results')
-    .insert([payload]);
+  const { error } = await supabaseClient.from("disc_results").insert([payload]);
 
   if (error) {
-    console.error('上传失败:', error);
-    alert('上传失败，请检查 Supabase 的 RLS/Policy 或网络。\n错误信息: ' + error.message);
-    btn.innerText = '重试上传';
-    btn.disabled = false;
-
-    // 允许下次再次自动尝试（如果你想失败后不再自动，删掉这两行）
-    autoUploaded = false;
+    console.error("上传失败:", error);
+    alert("上传失败：" + error.message);
+    if (uploadBtn) {
+      uploadBtn.innerText = "重试上传";
+      uploadBtn.disabled = false;
+    }
+    autoUploaded = false; // 允许重试
   } else {
-    // 不弹成功 alert 也行；你想静默上传就把 alert 注释掉
-    alert('✅ 已自动提交到 Supabase（disc_results）！');
-    btn.innerText = '已上传';
-    btn.disabled = true;
-    btn.style.backgroundColor = '#ccc';
+    console.log("✅ 已上传 DISC + 大五人格");
+    if (uploadBtn) {
+      uploadBtn.innerText = "已上传";
+      uploadBtn.disabled = true;
+      uploadBtn.style.backgroundColor = "#ccc";
+    }
   }
-};
+}
 
+/* ======================
+   12) 再测一次
+====================== */
+if (restartBtn) {
+  restartBtn.addEventListener("click", () => {
+    // 回到填写信息页（最稳）
+    if (userInfoBox) userInfoBox.style.display = "block";
+    if (questionBox) questionBox.style.display = "none";
+    if (resultBox) resultBox.style.display = "none";
+
+    // 清空输入框（可选）
+    const nameEl = document.getElementById("name");
+    const deptEl = document.getElementById("department");
+    const posEl = document.getElementById("position");
+    if (nameEl) nameEl.value = "";
+    if (deptEl) deptEl.value = "";
+    if (posEl) posEl.value = "";
+
+    // 重置
+    currentStage = "DISC";
+    currentIndex = 0;
+    answersDISC.fill(null);
+    answersBIG5.fill(null);
+    autoUploaded = false;
+
+    // 按钮复原
+    if (uploadBtn) {
+      uploadBtn.innerText = "提交结果到后台";
+      uploadBtn.disabled = false;
+      uploadBtn.style.backgroundColor = "";
+    }
+  });
+}
+
+// 如果你 HTML 里仍然保留 onclick="uploadToCloud()"，避免报错：给个兼容入口
+window.uploadToCloud = async function () {
+  await autoUploadToSupabase();
+};
