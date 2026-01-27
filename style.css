@@ -77,7 +77,7 @@ h2 {
    首页表单（填写信息）
 ===================== */
 #userInfo.box {
-  text-align: center;
+  text-align: center; /* h2 居中 */
 }
 
 #userInfo.box h2 {
@@ -91,6 +91,7 @@ h2 {
   margin: 0 auto;
 }
 
+/* 每行 label + input 对齐 */
 #userInfo.box #userForm .form-group {
   display: grid;
   grid-template-columns: 100px 1fr;
@@ -140,6 +141,7 @@ h2 {
   cursor: not-allowed;
 }
 
+/* “开始测评”按钮 */
 #userInfo.box button[type="submit"] {
   display: block;
   margin: 28px auto 0;
@@ -264,7 +266,7 @@ h2 {
 .discCard .cardHeader { background: #2c6e2f; }
 .big5Card .cardHeader { background: #1e50a0; }
 
-/* 图表容器，让 canvas 居中 */
+/* 图表容器 */
 .chartWrap {
   margin-top: 14px;
   background: #ffffff;
@@ -302,6 +304,22 @@ h2 {
 }
 
 /* =====================
+   ✅ 关键修复：允许 JS 控制显示/隐藏
+   （防止卡在填写信息页）
+===================== */
+#userInfo[style*="display: none"] {
+  display: none !important;
+}
+
+#questionBox[style*="display: block"] {
+  display: block !important;
+}
+
+#resultBox[style*="display: block"] {
+  display: block !important;
+}
+
+/* =====================
    手机端适配
 ===================== */
 @media (max-width: 768px) {
@@ -323,6 +341,7 @@ h2 {
     grid-template-columns: 1fr;
     gap: 8px;
   }
+
   #userInfo.box #userForm .form-group label {
     text-align: left;
   }
