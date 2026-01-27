@@ -706,6 +706,8 @@ function showResult() {
 
   // 大五人格一段
   const big5Block =
+     // 大五人格一段
+  const big5Block =
     `大五人格（1~5 分）：\n` +
     `外向性 E：${avg.E}\n` +
     `宜人性 A：${avg.A}\n` +
@@ -713,71 +715,66 @@ function showResult() {
     `神经质 N：${avg.N}\n` +
     `开放性 O：${avg.O}`;
 
-  // 关键：用两个空行分段
+  // ✅ 关键：用两个空行分段（把文字真正写到页面上）
   mainTypeEl.textContent = `${line1}\n\n${discBlock}\n\n${big5Block}`;
+} // ✅ 结束 if (mainTypeEl)
+
+/* ---- DISC 分数列表 ---- */
+if (scoreListEl) {
+  scoreListEl.innerHTML = "";
+  entries.forEach(([k, v]) => {
+    const li = document.createElement("li");
+    li.innerHTML = `<span>${k}</span><strong>${v}</strong>`;
+    scoreListEl.appendChild(li);
+  });
 }
 
-  // DISC 分数列表
-  if (scoreListEl) {
-    scoreListEl.innerHTML = "";
-    entries.forEach(([k, v]) => {
-      const li = document.createElement("li");
-      li.innerHTML = `<span>${k}</span><strong>${v}</strong>`;
-      scoreListEl.appendChild(li);
-    });
-  }
+/* ---- DISC 柱状图 ---- */
+const discCanvas = document.getElementById("resultChart");
+if (discCanvas && window.Chart) {
+  const ctx = discCanvas.getContext("2d");
+  if (discBarChart) discBarChart.destroy();
 
-  // DISC 柱状图
-  const discCanvas = document.getElementById("resultChart");
-  if (discCanvas && window.Chart) {
-    const ctx = discCanvas.getContext("2d");
-    if (discBarChart) discBarChart.destroy();
+  discBarChart = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: ["D", "I", "S", "C"],
+      datasets: [{
+        label: "DISC 数量",
+        data: [discScores.D, discScores.I, discScores.S, discScores.C],
+        borderWidth: 1
+      }]
+    },
+    options: {
+      scales: { y: { beginAtZero: true } }
+    }
+  });
+}
 
-    discBarChart = new Chart(ctx, {
-      type: "bar",
-      data: {
-        labels: ["D", "I", "S", "C"],
-        datasets: [{
-          label: "DISC 数量",
-          data: [discScores.D, discScores.I, discScores.S, discScores.C],
-          borderWidth: 1
-        }]
-      },
-      options: {
-        scales: { y: { beginAtZero: true } }
+/* ---- BIG5 雷达图 ---- */
+const radarCanvas = document.getElementById("big5RadarChart");
+if (radarCanvas && window.Chart) {
+  const ctx = radarCanvas.getContext("2d");
+  if (big5RadarChart) big5RadarChart.destroy();
+
+  big5RadarChart = new Chart(ctx, {
+    type: "radar",
+    data: {
+      labels: ["外向性 E", "宜人性 A", "尽责性 C", "神经质 N", "开放性 O"],
+      datasets: [{
+        label: "大五人格（1–5）",
+        data: [avg.E, avg.A, avg.C, avg.N, avg.O],
+        fill: true,
+        borderWidth: 2
+      }]
+    },
+    options: {
+      scales: {
+        r: { min: 1, max: 5, ticks: { stepSize: 1 } }
       }
-    });
-  }
-
-  // BIG5 雷达图（需要你 HTML 有 big5RadarChart canvas）
-  const radarCanvas = document.getElementById("big5RadarChart");
-  if (radarCanvas && window.Chart) {
-    const ctx = radarCanvas.getContext("2d");
-    if (big5RadarChart) big5RadarChart.destroy();
-
-    big5RadarChart = new Chart(ctx, {
-      type: "radar",
-      data: {
-        labels: ["外向性 E", "宜人性 A", "尽责性 C", "神经质 N", "开放性 O"],
-        datasets: [{
-          label: "大五人格（1–5）",
-          data: [avg.E, avg.A, avg.C, avg.N, avg.O],
-          fill: true,
-          borderWidth: 2
-        }]
-      },
-      options: {
-        scales: {
-          r: {
-            min: 1,
-            max: 5,
-            ticks: { stepSize: 1 }
-          }
-        }
-      }
-    });
-  }
-
+    }
+  });
+}
   // 自动上传
   autoUploadToSupabase();
 }
@@ -882,4 +879,5 @@ if (restartBtn) {
 window.uploadToCloud = async function () {
   await autoUploadToSupabase();
 };
+
 
