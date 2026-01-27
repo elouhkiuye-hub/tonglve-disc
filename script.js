@@ -694,18 +694,28 @@ function showResult() {
 
   /* ---- 文本展示 ---- */
   if (mainTypeEl) {
-    mainTypeEl.textContent =
-      `测评结果：${userInfo.name}（${userInfo.department} - ${userInfo.position}）\n\n` +
-      `DISC 主型 + 次型：${mainType} + ${secondType}\n` +
-      `• ${discDesc[mainType]}\n` +
-      `• ${discDesc[secondType]}\n\n` +
-      `大五人格（1~5 分）：\n` +
-      `外向性 E：${avg.E}\n` +
-      `宜人性 A：${avg.A}\n` +
-      `尽责性 C：${avg.C}\n` +
-      `神经质 N：${avg.N}\n` +
-      `开放性 O：${avg.O}`;
-  }
+  // 名字部门一行
+  const line1 = `测评结果：${userInfo.name}（${userInfo.department} - ${userInfo.position}）`;
+
+  // DISC 一段
+  const discBlock =
+    `DISC 结果：\n` +
+    `主型 + 次型：${mainType} + ${secondType}\n` +
+    `• ${discDesc[mainType]}\n` +
+    `• ${discDesc[secondType]}`;
+
+  // 大五人格一段
+  const big5Block =
+    `大五人格（1~5 分）：\n` +
+    `外向性 E：${avg.E}\n` +
+    `宜人性 A：${avg.A}\n` +
+    `尽责性 C：${avg.C}\n` +
+    `神经质 N：${avg.N}\n` +
+    `开放性 O：${avg.O}`;
+
+  // 关键：用两个空行分段
+  mainTypeEl.textContent = `${line1}\n\n${discBlock}\n\n${big5Block}`;
+}
 
   // DISC 分数列表
   if (scoreListEl) {
@@ -872,3 +882,4 @@ if (restartBtn) {
 window.uploadToCloud = async function () {
   await autoUploadToSupabase();
 };
+
