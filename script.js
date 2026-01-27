@@ -706,8 +706,6 @@ function showResult() {
 
   // 大五人格一段
   const big5Block =
-     // 大五人格一段
-  const big5Block =
     `大五人格（1~5 分）：\n` +
     `外向性 E：${avg.E}\n` +
     `宜人性 A：${avg.A}\n` +
@@ -879,5 +877,6 @@ if (restartBtn) {
 window.uploadToCloud = async function () {
   await autoUploadToSupabase();
 };
+
 
 
