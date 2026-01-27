@@ -208,3 +208,20 @@ button[type="submit"]:hover {
 
 }
 #mainType { white-space: pre-line; }
+/* ====== 移动端适配：防止 Logo 挡住标题 ====== */
+@media (max-width: 768px) {
+  #logo {
+    position: static;        /* 取消 absolute */
+    text-align: center;      /* 居中 */
+    margin: 20px 0 10px 0;   /* 上下留白 */
+  }
+
+  #logo img {
+    width: 160px;            /* 手机上缩小一点 */
+    height: auto;
+  }
+
+  h1 {
+    margin-top: 0;           /* 防止多余空白 */
+  }
+}
