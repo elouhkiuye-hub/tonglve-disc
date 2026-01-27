@@ -1,69 +1,102 @@
 /* =========================
-   ✅ 首页表单强制优化（终极生效版）
-   只影响 #userInfo 里面的表单
+   ✅ 首页「填写您的信息」最终定稿
 ========================= */
 
-/* 让 “填写您的信息” 这张白卡：内容居中显示 */
+/* 白色卡片整体 */
 #userInfo.box {
-  text-align: center !important;
-}
-
-/* h2 也居中一点更舒服 */
-#userInfo.box h2 {
   text-align: center;
-  margin-bottom: 18px;
+  padding: 32px 24px;
 }
 
-/* 表单整体宽度限制 + 居中 */
+/* 标题：填写您的信息（必须在最上面） */
+#userInfo.box h2 {
+  display: block;
+  width: 100%;
+  text-align: center;
+  font-size: 32px;          /* 👈 放大 */
+  font-weight: 900;
+  color: #2c6e2f;
+  margin-bottom: 28px;
+}
+
+/* 表单整体居中 */
 #userInfo.box #userForm {
-  width: min(520px, 92%);
+  width: min(640px, 96%);
   margin: 0 auto;
 }
 
-/* 每一行：用 grid 强制对齐（比 flex 更稳） */
+/* 每一行：label + input */
 #userInfo.box #userForm .form-group {
-  display: grid !important;
-  grid-template-columns: 84px 1fr;  /* 左边label固定宽度，右边输入框自适应 */
+  display: grid;
+  grid-template-columns: 100px 1fr; /* label 更宽 */
   align-items: center;
-  column-gap: 12px;
-  row-gap: 6px;
-  margin: 12px 0;
+  column-gap: 16px;
+  margin-bottom: 20px;
 }
 
-/* label：右对齐，固定宽度 */
+/* label 字体放大 */
 #userInfo.box #userForm .form-group label {
-  margin: 0 !important;
   text-align: right;
-  white-space: nowrap;
+  font-size: 18px;          /* 👈 放大 */
   font-weight: 700;
   color: #1f2937;
+  white-space: nowrap;
 }
 
-/* input：占满右侧 */
+/* input 放大 */
 #userInfo.box #userForm .form-group input {
-  width: 100% !important;
-  box-sizing: border-box;
+  width: 100%;
+  font-size: 18px;          /* 👈 放大 */
+  padding: 14px 14px;
+  border-radius: 8px;
+  border: 1px solid #cfd6e6;
 }
 
-/* 开始测评按钮：别占满，居中 */
+/* 开始测评按钮（更像正式系统） */
 #userInfo.box #userForm button[type="submit"] {
-  width: 180px !important;
-  margin: 16px auto 0 !important;
   display: block;
-  border-radius: 10px;
+  margin: 32px auto 0;
+  padding: 16px 48px;
+  font-size: 20px;          /* 👈 放大 */
+  font-weight: 700;
+  border-radius: 12px;
+  background-color: #2c6e2f;
+  color: #fff;
+  border: none;
+  cursor: pointer;
 }
 
-/* 手机端：改成上下布局 */
+/* =========================
+   📱 手机端：上下排列 + 更大字
+========================= */
 @media (max-width: 768px) {
+
+  #userInfo.box {
+    padding: 24px 16px;
+  }
+
+  #userInfo.box h2 {
+    font-size: 26px;
+    margin-bottom: 20px;
+  }
+
   #userInfo.box #userForm .form-group {
     grid-template-columns: 1fr;
+    gap: 8px;
   }
 
   #userInfo.box #userForm .form-group label {
     text-align: left;
+    font-size: 17px;
+  }
+
+  #userInfo.box #userForm .form-group input {
+    font-size: 17px;
   }
 
   #userInfo.box #userForm button[type="submit"] {
-    width: 100% !important;
+    width: 100%;
+    font-size: 18px;
+    padding: 14px;
   }
 }
